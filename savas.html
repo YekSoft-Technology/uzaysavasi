@@ -139,8 +139,9 @@
             <button onclick="startGame()">Oyunu Başlat</button>
             <div id="instructions">
                 <strong>Kontroller:</strong><br>
-                ← → Hareket et<br>
-                SPACE Ateş et<br>
+                🖱️ Mouse ile sağa-sola hareket et<br>
+                🖱️ Sol tık ile ateş et<br>
+                (Alternatif: ← → ok tuşları, SPACE ateş)<br>
                 <br>
                 <strong>Özellikler:</strong><br>
                 🔫 Düşmanları yok et<br>
@@ -305,8 +306,38 @@
 
         // Kontroller
         const keys = {};
+        let mouseX = 0;
+        let mousePressed = false;
         let lastShot = 0;
 
+        // Mouse kontrolü
+        document.addEventListener('mousemove', (e) => {
+            const rect = canvas.getBoundingClientRect();
+            mouseX = e.clientX - rect.left;
+        });
+
+        document.addEventListener('mousedown', (e) => {
+            if (e.button === 0 && gameRunning) { // Sol tık
+                e.preventDefault();
+                mousePressed = true;
+                
+                const now = Date.now();
+                const shotDelay = powerupStates.rapidFire > 0 ? 100 : 250;
+                
+                if (now - lastShot > shotDelay) {
+                    shootBullet();
+                    lastShot = now;
+                }
+            }
+        });
+
+        document.addEventListener('mouseup', (e) => {
+            if (e.button === 0) {
+                mousePressed = false;
+            }
+        });
+
+        // Klavye kontrolü (opsiyonel olarak bırakıyorum)
         document.addEventListener('keydown', (e) => {
             keys[e.code] = true;
             
@@ -338,12 +369,31 @@
         function update() {
             if (!gameRunning) return;
 
-            // Oyuncu hareketi
+            // Oyuncu hareketi - Mouse kontrolü
+            const targetX = mouseX - player.width / 2;
+            const smoothing = 0.15; // Yumuşak hareket için
+            
+            if (targetX > 0 && targetX < canvas.width - player.width) {
+                player.x += (targetX - player.x) * smoothing;
+            }
+
+            // Klavye kontrolü (alternatif)
             if (keys['ArrowLeft'] && player.x > 0) {
                 player.x -= player.speed;
             }
             if (keys['ArrowRight'] && player.x < canvas.width - player.width) {
                 player.x += player.speed;
+            }
+
+            // Mouse ile sürekli ateş (sol tık basılı tutulduğunda)
+            if (mousePressed) {
+                const now = Date.now();
+                const shotDelay = powerupStates.rapidFire > 0 ? 100 : 250;
+                
+                if (now - lastShot > shotDelay) {
+                    shootBullet();
+                    lastShot = now;
+                }
             }
 
             // Yıldızları güncelle
