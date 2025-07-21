@@ -169,7 +169,7 @@
         let score = 0;
         let lives = 3;
         let level = 1;
-        let gameSpeed = 2;
+        let gameSpeed = 0.5;
         
         // Oyuncu
         const player = {
@@ -177,7 +177,7 @@
             y: canvas.height - 80,
             width: 50,
             height: 30,
-            speed: 8,
+            speed: 4,
             color: '#00ff00'
         };
 
@@ -246,9 +246,9 @@
         // Düşman oluştur
         function createEnemy() {
             const types = [
-                { width: 40, height: 20, speed: 2, color: '#ff0000', points: 10, hp: 1 },
-                { width: 30, height: 30, speed: 3, color: '#ff6600', points: 15, hp: 1 },
-                { width: 50, height: 25, speed: 1.5, color: '#ff00ff', points: 25, hp: 2 }
+                { width: 40, height: 20, speed: 0.8, color: '#ff0000', points: 10, hp: 1 },
+                { width: 30, height: 30, speed: 1.2, color: '#ff6600', points: 15, hp: 1 },
+                { width: 50, height: 25, speed: 0.6, color: '#ff00ff', points: 25, hp: 2 }
             ];
             
             const type = types[Math.floor(Math.random() * types.length)];
@@ -276,7 +276,7 @@
                 y: y,
                 width: 25,
                 height: 25,
-                speed: 2,
+                speed: 1,
                 ...powerupType
             });
         }
@@ -286,9 +286,9 @@
             if (powerupStates.multiShot > 0) {
                 // Çoklu mermi
                 bullets.push(
-                    { x: player.x + 15, y: player.y, width: 4, height: 10, speed: 12, color: '#00ff00' },
-                    { x: player.x + 25, y: player.y, width: 4, height: 10, speed: 12, color: '#00ff00' },
-                    { x: player.x + 35, y: player.y, width: 4, height: 10, speed: 12, color: '#00ff00' }
+                    { x: player.x + 15, y: player.y, width: 4, height: 10, speed: 6, color: '#00ff00' },
+                    { x: player.x + 25, y: player.y, width: 4, height: 10, speed: 6, color: '#00ff00' },
+                    { x: player.x + 35, y: player.y, width: 4, height: 10, speed: 6, color: '#00ff00' }
                 );
             } else {
                 bullets.push({
@@ -296,7 +296,7 @@
                     y: player.y,
                     width: 4,
                     height: 10,
-                    speed: 12,
+                    speed: 6,
                     color: '#00ff00'
                 });
             }
@@ -438,14 +438,14 @@
             });
 
             // Düşman oluşturma
-            if (Math.random() < 0.02 + level * 0.005) {
+            if (Math.random() < 0.008 + level * 0.002) {
                 createEnemy();
             }
 
             // Seviye artırma
             if (score > level * 200) {
                 level++;
-                gameSpeed += 0.5;
+                gameSpeed += 0.2;
                 playSound(1500, 0.5);
             }
 
@@ -567,7 +567,7 @@
             score = 0;
             lives = 3;
             level = 1;
-            gameSpeed = 2;
+            gameSpeed = 0.5;
             
             // Dizileri temizle
             bullets = [];
