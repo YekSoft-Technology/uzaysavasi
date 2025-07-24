@@ -147,7 +147,7 @@
             border: 1px solid #333;
             border-radius: 8px;
             background-color: rgba(0,0,0,0.5);
-            text-align: left; /* Metin sola hizalı */
+            text-align: left;
         }
         .upgrade-item h3 {
             margin-bottom: 5px;
@@ -217,7 +217,7 @@
         let score = 0;
         let lives = 3;
         let level = 1;
-        let money = 0; // Para değişkeni
+        let money = 0;
         let gameSpeed = 0.5;
         
         // Oyuncu
@@ -226,11 +226,12 @@
             y: canvas.height - 80,
             width: 50,
             height: 30,
-            baseSpeed: 4, // Temel hız
-            speed: 4,     // Mevcut hız (yükseltmelerle değişebilir)
-            baseFireRate: 250, // Temel ateş hızı (ms)
-            fireRate: 250,     // Mevcut ateş hızı
-            bulletDamage: 1, // Mermi hasarı
+            baseSpeed: 4,
+            speed: 4,
+            baseFireRate: 250,
+            fireRate: 250,
+            baseBulletDamage: 1, // Temel hasar eklendi
+            bulletDamage: 1,
             color: '#00ff00'
         };
 
@@ -256,7 +257,7 @@
                 cost: [50, 150, 300, 500],
                 levels: 4,
                 currentLevel: 0,
-                apply: () => { player.fireRate = player.baseFireRate * (1 - upgrades.fireRate.currentLevel * 0.15); } // %15 artış her seviye (daha düşük değer daha iyi)
+                apply: () => { player.fireRate = player.baseFireRate * (1 - upgrades.fireRate.currentLevel * 0.15); }
             },
             playerSpeed: {
                 name: "Gemi Hızı Arttır",
@@ -264,7 +265,7 @@
                 cost: [75, 200, 400],
                 levels: 3,
                 currentLevel: 0,
-                apply: () => { player.speed = player.baseSpeed * (1 + upgrades.playerSpeed.currentLevel * 0.25); } // %25 artış her seviye
+                apply: () => { player.speed = player.baseSpeed * (1 + upgrades.playerSpeed.currentLevel * 0.25); }
             },
             bulletDamage: {
                 name: "Mermi Gücü Arttır",
@@ -272,7 +273,7 @@
                 cost: [100, 250, 500, 800],
                 levels: 4,
                 currentLevel: 0,
-                apply: () => { player.bulletDamage = 1 + upgrades.bulletDamage.currentLevel * 0.5; } // %50 hasar artışı her seviye
+                apply: () => { player.bulletDamage = player.baseBulletDamage + upgrades.bulletDamage.currentLevel * 0.5; }
             },
             maxLives: {
                 name: "Ekstra Can",
@@ -280,12 +281,11 @@
                 cost: [200],
                 levels: 1,
                 currentLevel: 0,
-                apply: () => { lives = Math.max(lives, 4); } // Canı 4 yapar eğer 3'ten azsa veya aynıysa
+                apply: () => { lives = Math.max(lives, 4); }
             }
         };
 
-
-        // Ses efektleri (basit beep'ler için)
+        // Ses efektleri
         const audioContext = new (window.AudioContext || window.webkitAudioContext)();
         
         function playSound(frequency, duration, type = 'sine') {
@@ -308,7 +308,6 @@
 
         // Yıldızlar oluştur
         function createStars() {
-            // Yıldızları bir kez oluştur ve tekrar tekrar kullan
             if (stars.length === 0) {
                 for (let i = 0; i < 100; i++) {
                     stars.push({
@@ -338,7 +337,6 @@
 
         // Düşman oluştur
         function createEnemy() {
-            // Düşman tiplerine `moneyDrop` özelliği eklendi
             const types = [
                 { width: 40, height: 20, speed: 0.8, color: '#ff0000', points: 10, hp: 1, moneyDrop: 5 },
                 { width: 30, height: 30, speed: 1.2, color: '#ff6600', points: 15, hp: 1, moneyDrop: 7 },
@@ -378,7 +376,6 @@
         // Mermi ateşle
         function shootBullet() {
             if (powerupStates.multiShot > 0) {
-                // Çoklu mermi
                 bullets.push(
                     { x: player.x + 15, y: player.y, width: 4, height: 10, speed: 6, color: '#00ff00', damage: player.bulletDamage },
                     { x: player.x + 25, y: player.y, width: 4, height: 10, speed: 6, color: '#00ff00', damage: player.bulletDamage },
@@ -404,24 +401,16 @@
         let mousePressed = false;
         let lastShot = 0;
 
-        // Mouse kontrolü
         document.addEventListener('mousemove', (e) => {
+            if (!gameRunning) return;
             const rect = canvas.getBoundingClientRect();
             mouseX = e.clientX - rect.left;
         });
 
         document.addEventListener('mousedown', (e) => {
-            if (e.button === 0 && gameRunning) { // Sol tık
+            if (e.button === 0 && gameRunning) {
                 e.preventDefault();
                 mousePressed = true;
-                
-                const now = Date.now();
-                const shotDelay = powerupStates.rapidFire > 0 ? player.fireRate * 0.4 : player.fireRate; // Hızlı ateş varsa %60 daha hızlı
-                
-                if (now - lastShot > shotDelay) {
-                    shootBullet();
-                    lastShot = now;
-                }
             }
         });
 
@@ -431,21 +420,14 @@
             }
         });
 
-        // Klavye kontrolü
         document.addEventListener('keydown', (e) => {
+            if (!gameRunning) return;
             keys[e.code] = true;
             
-            if (e.code === 'Space' && gameRunning) {
+            if (e.code === 'Space') {
                 e.preventDefault();
-                const now = Date.now();
-                const shotDelay = powerupStates.rapidFire > 0 ? player.fireRate * 0.4 : player.fireRate;
-                
-                if (now - lastShot > shotDelay) {
-                    shootBullet();
-                    lastShot = now;
-                }
             }
-            if (e.code === 'KeyU' && gameRunning) { // U tuşu ile yükseltme ekranını aç
+            if (e.code === 'KeyU') {
                 showUpgradeScreen();
             }
         });
@@ -466,30 +448,22 @@
         function update() {
             if (!gameRunning) return;
 
-            // Oyuncu hareketi - Mouse kontrolü
+            // Oyuncu hareketi
             const targetX = mouseX - player.width / 2;
-            const smoothing = 0.15; // Yumuşak hareket için
-            
-            // Mouse hedefi ile oyuncu arasındaki mesafeyi ölç ve yumuşak geçiş yap
+            const smoothing = 0.15;
             player.x += (targetX - player.x) * smoothing;
             
-            // Sınırları aşmasını engelle
-            player.x = Math.max(0, Math.min(canvas.width - player.width, player.x));
-
-
-            // Klavye kontrolü (alternatif)
             if (keys['ArrowLeft']) {
                 player.x -= player.speed;
             }
             if (keys['ArrowRight']) {
                 player.x += player.speed;
             }
-            // Klavye hareketinde de sınırları kontrol et
+            
             player.x = Math.max(0, Math.min(canvas.width - player.width, player.x));
 
-
-            // Mouse ile sürekli ateş (sol tık basılı tutulduğunda)
-            if (mousePressed) {
+            // Sürekli ateş
+            if (mousePressed || keys['Space']) {
                 const now = Date.now();
                 const shotDelay = powerupStates.rapidFire > 0 ? player.fireRate * 0.4 : player.fireRate;
                 
@@ -508,7 +482,7 @@
                 }
             });
 
-            // Mermileri güncelle
+            // Mermileri güncelle ve temizle
             bullets = bullets.filter(bullet => {
                 bullet.y -= bullet.speed;
                 return bullet.y > -bullet.height;
@@ -518,26 +492,24 @@
             enemies.forEach((enemy, enemyIndex) => {
                 enemy.y += enemy.speed + gameSpeed;
                 
-                // Düşman oyuncuya çarptı mı?
                 if (checkCollision(player, enemy)) {
                     if (powerupStates.shield > 0) {
-                        powerupStates.shield = 0; // Kalkanı sıfırla
-                        createParticles(player.x + player.width/2, player.y + player.height/2, '#00ffff', 20); // Kalkan kırılma efekti
-                        playSound(300, 0.5, 'triangle'); // Kalkan kırılma sesi
+                        powerupStates.shield = 0;
+                        createParticles(player.x + player.width/2, player.y + player.height/2, '#00ffff', 20);
+                        playSound(300, 0.5, 'triangle');
                     } else {
                         lives--;
                         createParticles(player.x + player.width/2, player.y + player.height/2, '#ff0000', 15);
                         playSound(200, 0.5);
+                        if (lives <= 0) {
+                            endGame();
+                            return; // Çarpışma sonrası oyunu sonlandır
+                        }
                     }
-                    enemies.splice(enemyIndex, 1); // Çarpan düşmanı kaldır
-                    
-                    if (lives <= 0) {
-                        endGame();
-                    }
+                    enemies.splice(enemyIndex, 1);
                 }
             });
 
-            // Ekrandan çıkan düşmanları temizle
             enemies = enemies.filter(enemy => enemy.y < canvas.height + 50);
 
             // Güçlendirmeleri güncelle
@@ -550,18 +522,17 @@
             bullets.forEach((bullet, bulletIndex) => {
                 enemies.forEach((enemy, enemyIndex) => {
                     if (checkCollision(bullet, enemy)) {
-                        enemy.hp -= bullet.damage; // Hasar uygulandı
+                        enemy.hp -= bullet.damage;
                         createParticles(enemy.x + enemy.width/2, enemy.y + enemy.height/2, enemy.color, 8);
                         bullets.splice(bulletIndex, 1);
                         playSound(600, 0.15);
                         
                         if (enemy.hp <= 0) {
                             score += enemy.points;
-                            money += enemy.moneyDrop; // Para ekle
+                            money += enemy.moneyDrop;
                             createParticles(enemy.x + enemy.width/2, enemy.y + enemy.height/2, '#ffff00', 12);
                             
-                            // Güçlendirme düşürme şansı
-                            if (Math.random() < 0.15) { // %15 şans
+                            if (Math.random() < 0.15) {
                                 createPowerup(enemy.x + enemy.width/2, enemy.y + enemy.height/2);
                             }
                             
@@ -571,16 +542,16 @@
                     }
                 });
             });
+            bullets = bullets.filter(b => b); // Ölen mermileri tekrar temizle
 
             // Oyuncu-güçlendirme çarpışmaları
             powerups.forEach((powerup, powerupIndex) => {
                 if (checkCollision(player, powerup)) {
-                    let duration = 300; // Varsayılan 5 saniye (300 frame @60 FPS)
+                    let duration = 300;
                     if (powerup.type === 'shield') {
-                        // Kalkan süresini skora göre ayarla
-                        const scoreMultiplier = Math.floor(score / 500); // Her 500 skorda bir çarpan artar
-                        duration = 180 + (scoreMultiplier * 60); // Başlangıç 3 saniye (180 frame), her 500 skorda +1 saniye (60 frame)
-                        duration = Math.min(duration, 900); // Maksimum 15 saniye (900 frame)
+                        const scoreMultiplier = Math.floor(score / 500);
+                        duration = 180 + (scoreMultiplier * 60);
+                        duration = Math.min(duration, 900);
                     }
                     powerupStates[powerup.type] = duration;
                     createParticles(powerup.x + powerup.width/2, powerup.y + powerup.height/2, powerup.color, 10);
@@ -610,32 +581,28 @@
             }
 
             // Seviye artırma
-            if (score >= level * 200) { // Skora göre seviye atlama
+            if (score >= level * 200) {
                 level++;
                 gameSpeed += 0.2;
                 playSound(1500, 0.5);
             }
 
-            // UI güncelle
             updateUI();
         }
 
         // Çizim fonksiyonu
         function draw() {
-            // Ekranı temizle
             ctx.fillStyle = 'rgba(0, 0, 17, 0.1)';
             ctx.fillRect(0, 0, canvas.width, canvas.height);
 
-            // Yıldızları çiz
             stars.forEach(star => {
                 ctx.fillStyle = `rgba(255, 255, 255, ${star.brightness})`;
                 ctx.fillRect(star.x, star.y, 2, 2);
             });
 
-            // Oyuncuyu çiz (kalkan varsa etki ekle)
             if (powerupStates.shield > 0) {
-                const shieldAlpha = Math.sin(Date.now() * 0.01) * 0.3 + 0.7; // Titreşimli alpha
-                ctx.strokeStyle = `rgba(255, 0, 255, ${shieldAlpha})`; // Mor ton
+                const shieldAlpha = Math.sin(Date.now() * 0.01) * 0.3 + 0.7;
+                ctx.strokeStyle = `rgba(255, 0, 255, ${shieldAlpha})`;
                 ctx.lineWidth = 3;
                 ctx.beginPath();
                 ctx.arc(player.x + player.width/2, player.y + player.height/2, 35, 0, Math.PI * 2);
@@ -645,29 +612,22 @@
             ctx.fillStyle = player.color;
             ctx.fillRect(player.x, player.y, player.width, player.height);
             
-            // Oyuncu detayları
             ctx.fillStyle = '#00ffff';
             ctx.fillRect(player.x + 10, player.y + 5, 30, 5);
             ctx.fillRect(player.x + 20, player.y - 5, 10, 10);
 
-            // Mermileri çiz
             bullets.forEach(bullet => {
                 ctx.fillStyle = bullet.color;
-                ctx.fillRect(bullet.x, bullet.y, bullet.width, bullet.height);
-                
-                // Mermi parıltısı
                 ctx.shadowColor = bullet.color;
                 ctx.shadowBlur = 5;
                 ctx.fillRect(bullet.x, bullet.y, bullet.width, bullet.height);
                 ctx.shadowBlur = 0;
             });
 
-            // Düşmanları çiz
             enemies.forEach(enemy => {
                 ctx.fillStyle = enemy.color;
                 ctx.fillRect(enemy.x, enemy.y, enemy.width, enemy.height);
                 
-                // Can barı
                 if (enemy.hp < enemy.maxHp) {
                     ctx.fillStyle = '#ff0000';
                     ctx.fillRect(enemy.x, enemy.y - 8, enemy.width, 4);
@@ -675,30 +635,23 @@
                     ctx.fillRect(enemy.x, enemy.y - 8, (enemy.width * enemy.hp) / enemy.maxHp, 4);
                 }
                 
-                // Düşman detayları
                 ctx.fillStyle = 'rgba(255, 255, 255, 0.8)';
                 ctx.fillRect(enemy.x + 5, enemy.y + 5, enemy.width - 10, 3);
             });
 
-            // Güçlendirmeleri çiz
             powerups.forEach(powerup => {
                 ctx.fillStyle = powerup.color;
-                ctx.fillRect(powerup.x, powerup.y, powerup.width, powerup.height);
-                
-                // Güçlendirme parıltısı
                 ctx.shadowColor = powerup.color;
                 ctx.shadowBlur = 10;
-                ctx.fillRect(powerup.x + 2, powerup.y + 2, powerup.width - 4, powerup.height - 4);
+                ctx.fillRect(powerup.x, powerup.y, powerup.width, powerup.height);
                 ctx.shadowBlur = 0;
                 
-                // Sembol
                 ctx.fillStyle = 'black';
                 ctx.font = '16px Arial';
                 ctx.textAlign = 'center';
                 ctx.fillText(powerup.symbol, powerup.x + powerup.width/2, powerup.y + powerup.height/2 + 5);
             });
 
-            // Parçacıkları çiz
             particles.forEach(particle => {
                 const alpha = particle.life / particle.maxLife;
                 ctx.fillStyle = particle.color + Math.floor(alpha * 255).toString(16).padStart(2, '0');
@@ -711,9 +664,8 @@
             document.getElementById('score').textContent = score;
             document.getElementById('lives').textContent = lives;
             document.getElementById('level').textContent = level;
-            document.getElementById('money').textContent = money; // Para gösterimini güncelle
+            document.getElementById('money').textContent = money;
             
-            // Güçlendirme durumu
             let status = '';
             if (powerupStates.rapidFire > 0) status += `⚡ Hızlı Ateş (${Math.ceil(powerupStates.rapidFire / 60)}s) `;
             if (powerupStates.multiShot > 0) status += `🔫 Çoklu Mermi (${Math.ceil(powerupStates.multiShot / 60)}s) `;
@@ -724,25 +676,25 @@
 
         // Yükseltme ekranını göster
         function showUpgradeScreen() {
-            gameRunning = false; // Oyunu durdur
+            if (!gameRunning) return;
+            gameRunning = false;
             document.getElementById('upgradeScreen').style.display = 'block';
-            renderUpgrades(); // Yükseltmeleri menüye çiz
+            renderUpgrades();
         }
 
         // Yükseltme ekranını gizle
         function hideUpgradeScreen() {
             document.getElementById('upgradeScreen').style.display = 'none';
-            gameRunning = true; // Oyunu devam ettir
+            gameRunning = true;
         }
 
         // Yükseltmeleri çiz
         function renderUpgrades() {
             const upgradeListDiv = document.getElementById('upgradeList');
-            upgradeListDiv.innerHTML = ''; // İçeriği temizle
+            upgradeListDiv.innerHTML = '';
 
             for (const key in upgrades) {
                 const upgrade = upgrades[key];
-                const nextLevel = upgrade.currentLevel + 1;
                 const cost = upgrade.cost[upgrade.currentLevel];
                 const isMaxLevel = upgrade.currentLevel >= upgrade.levels;
                 const canAfford = money >= cost;
@@ -764,7 +716,7 @@
             }
         }
 
-        // Yükseltme değerlerini göster (Daha okunur format)
+        // Yükseltme değerlerini göster
         function getUpgradeCurrentValue(key) {
             switch(key) {
                 case 'fireRate': return `${Math.round(player.fireRate)}ms (Daha Düşük Daha İyi)`;
@@ -782,7 +734,7 @@
             switch(key) {
                 case 'fireRate': return `${Math.round(player.baseFireRate * (1 - (upgrade.currentLevel + 1) * 0.15))}ms`;
                 case 'playerSpeed': return `${(player.baseSpeed * (1 + (upgrade.currentLevel + 1) * 0.25)).toFixed(1)} birim/kare`;
-                case 'bulletDamage': return `${(1 + (upgrade.currentLevel + 1) * 0.5).toFixed(1)} hasar`;
+                case 'bulletDamage': return `${(player.baseBulletDamage + (upgrade.currentLevel + 1) * 0.5).toFixed(1)} hasar`;
                 case 'maxLives': return `Can limitini 4 yapar`;
                 default: return '';
             }
@@ -796,15 +748,14 @@
             if (money >= cost && upgrade.currentLevel < upgrade.levels) {
                 money -= cost;
                 upgrade.currentLevel++;
-                upgrade.apply(); // Yükseltmeyi uygula
-                playSound(900, 0.2, 'square'); // Yükseltme sesi
-                updateUI(); // Para ve diğer UI elementlerini güncelle
-                renderUpgrades(); // Yükseltme listesini yeniden çiz
+                upgrade.apply();
+                playSound(900, 0.2, 'square');
+                updateUI();
+                renderUpgrades();
             } else {
-                playSound(100, 0.1, 'sawtooth'); // Hata sesi (yeterli para yok veya max seviye)
+                playSound(100, 0.1, 'sawtooth');
             }
         }
-
 
         // Oyun döngüsü
         function gameLoop() {
@@ -816,40 +767,34 @@
         // Oyunu başlat
         function startGame() {
             document.getElementById('startScreen').style.display = 'none';
-            document.getElementById('gameOver').style.display = 'none'; // GameOver ekranını kapat
-            document.getElementById('upgradeScreen').style.display = 'none'; // Upgrade ekranını kapat
+            document.getElementById('gameOver').style.display = 'none';
+            document.getElementById('upgradeScreen').style.display = 'none';
 
             gameRunning = true;
             score = 0;
-            lives = 3; // Varsayılan can 3
+            lives = 3;
             level = 1;
-            money = 0; // Oyun başladığında para sıfırlanır
+            money = 0;
             gameSpeed = 0.5;
             
-            // Dizileri temizle
             bullets = [];
             enemies = [];
             powerups = [];
             particles = [];
             
-            // Güçlendirmeleri sıfırla
             powerupStates = { rapidFire: 0, multiShot: 0, shield: 0 };
             
-            // Yükseltmeleri sıfırla ve varsayılan değerlerini uygula
             for (const key in upgrades) {
-                upgrades[key].currentLevel = 0; // Tüm yükseltmeleri 0. seviyeye getir
-                upgrades[key].apply(); // Yükseltmelerin başlangıç değerlerini uygula (player.speed, player.fireRate vb. güncellenir)
+                upgrades[key].currentLevel = 0;
+                upgrades[key].apply();
             }
-            // MaxLives için özel kontrol, çünkü lives sadece başlangıçta güncellenir
             lives = 3; 
 
-
-            // Oyuncuyu ortaya al
             player.x = canvas.width / 2 - 25;
             player.y = canvas.height - 80;
             
-            createStars(); // Yıldızları bir kez oluştur
-            updateUI(); // UI'ı başlangıç değerleriyle güncelle
+            createStars();
+            updateUI();
         }
 
         // Oyunu bitir
@@ -857,7 +802,7 @@
             gameRunning = false;
             document.getElementById('finalScore').textContent = score;
             document.getElementById('finalLevel').textContent = level;
-            document.getElementById('finalMoney').textContent = money; // Toplanan parayı göster
+            document.getElementById('finalMoney').textContent = money;
             document.getElementById('gameOver').style.display = 'block';
             playSound(150, 1);
         }
@@ -872,17 +817,15 @@
         window.addEventListener('resize', () => {
             canvas.width = window.innerWidth;
             canvas.height = window.innerHeight;
-            // Yeniden boyutlandırmadan sonra oyuncu konumunu ayarla
             player.x = canvas.width / 2 - player.width / 2;
             player.y = canvas.height - 80;
-            // Yıldızları yeniden konumlandır
             stars = [];
             createStars();
         });
 
         // Oyun döngüsünü başlat
         gameLoop();
-        createStars(); // İlk yıldızları oyun başlamadan oluştur
+        createStars();
         document.getElementById('startScreen').style.display = 'block'; // Başlangıç ekranını göster
     </script>
 </body>
