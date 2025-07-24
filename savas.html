@@ -147,6 +147,7 @@
             border: 1px solid #333;
             border-radius: 8px;
             background-color: rgba(0,0,0,0.5);
+            text-align: left; /* Metin sola hizalı */
         }
         .upgrade-item h3 {
             margin-bottom: 5px;
@@ -183,7 +184,8 @@
                 🔫 Düşmanları yok et<br>
                 💎 Güçlendirmeleri topla<br>
                 ⚡ Hızlı ateş, Çoklu mermi, Kalkan<br>
-                💰 Düşmanlardan para topla, gemini geliştir!
+                💰 Düşmanlardan para topla, gemini geliştir!<br>
+                <strong>U</strong> tuşu ile yükseltme menüsünü aç!
                 🏆 En yüksek skoru hedefle!
             </div>
         </div>
@@ -215,7 +217,7 @@
         let score = 0;
         let lives = 3;
         let level = 1;
-        let money = 0;
+        let money = 0; // Para değişkeni
         let gameSpeed = 0.5;
         
         // Oyuncu
@@ -254,7 +256,7 @@
                 cost: [50, 150, 300, 500],
                 levels: 4,
                 currentLevel: 0,
-                apply: () => { player.fireRate = player.baseFireRate * (1 - upgrades.fireRate.currentLevel * 0.15); } // %15 artış her seviye
+                apply: () => { player.fireRate = player.baseFireRate * (1 - upgrades.fireRate.currentLevel * 0.15); } // %15 artış her seviye (daha düşük değer daha iyi)
             },
             playerSpeed: {
                 name: "Gemi Hızı Arttır",
@@ -306,13 +308,16 @@
 
         // Yıldızlar oluştur
         function createStars() {
-            for (let i = 0; i < 100; i++) {
-                stars.push({
-                    x: Math.random() * canvas.width,
-                    y: Math.random() * canvas.height,
-                    speed: Math.random() * 2 + 0.5,
-                    brightness: Math.random()
-                });
+            // Yıldızları bir kez oluştur ve tekrar tekrar kullan
+            if (stars.length === 0) {
+                for (let i = 0; i < 100; i++) {
+                    stars.push({
+                        x: Math.random() * canvas.width,
+                        y: Math.random() * canvas.height,
+                        speed: Math.random() * 2 + 0.5,
+                        brightness: Math.random()
+                    });
+                }
             }
         }
 
@@ -333,6 +338,7 @@
 
         // Düşman oluştur
         function createEnemy() {
+            // Düşman tiplerine `moneyDrop` özelliği eklendi
             const types = [
                 { width: 40, height: 20, speed: 0.8, color: '#ff0000', points: 10, hp: 1, moneyDrop: 5 },
                 { width: 30, height: 30, speed: 1.2, color: '#ff6600', points: 15, hp: 1, moneyDrop: 7 },
@@ -425,7 +431,7 @@
             }
         });
 
-        // Klavye kontrolü (opsiyonel olarak bırakıyorum)
+        // Klavye kontrolü
         document.addEventListener('keydown', (e) => {
             keys[e.code] = true;
             
@@ -464,17 +470,23 @@
             const targetX = mouseX - player.width / 2;
             const smoothing = 0.15; // Yumuşak hareket için
             
-            if (targetX > 0 && targetX < canvas.width - player.width) {
-                player.x += (targetX - player.x) * smoothing;
-            }
+            // Mouse hedefi ile oyuncu arasındaki mesafeyi ölç ve yumuşak geçiş yap
+            player.x += (targetX - player.x) * smoothing;
+            
+            // Sınırları aşmasını engelle
+            player.x = Math.max(0, Math.min(canvas.width - player.width, player.x));
+
 
             // Klavye kontrolü (alternatif)
-            if (keys['ArrowLeft'] && player.x > 0) {
+            if (keys['ArrowLeft']) {
                 player.x -= player.speed;
             }
-            if (keys['ArrowRight'] && player.x < canvas.width - player.width) {
+            if (keys['ArrowRight']) {
                 player.x += player.speed;
             }
+            // Klavye hareketinde de sınırları kontrol et
+            player.x = Math.max(0, Math.min(canvas.width - player.width, player.x));
+
 
             // Mouse ile sürekli ateş (sol tık basılı tutulduğunda)
             if (mousePressed) {
@@ -517,7 +529,7 @@
                         createParticles(player.x + player.width/2, player.y + player.height/2, '#ff0000', 15);
                         playSound(200, 0.5);
                     }
-                    enemies.splice(enemyIndex, 1);
+                    enemies.splice(enemyIndex, 1); // Çarpan düşmanı kaldır
                     
                     if (lives <= 0) {
                         endGame();
@@ -549,7 +561,7 @@
                             createParticles(enemy.x + enemy.width/2, enemy.y + enemy.height/2, '#ffff00', 12);
                             
                             // Güçlendirme düşürme şansı
-                            if (Math.random() < 0.15) {
+                            if (Math.random() < 0.15) { // %15 şans
                                 createPowerup(enemy.x + enemy.width/2, enemy.y + enemy.height/2);
                             }
                             
@@ -699,7 +711,7 @@
             document.getElementById('score').textContent = score;
             document.getElementById('lives').textContent = lives;
             document.getElementById('level').textContent = level;
-            document.getElementById('money').textContent = money;
+            document.getElementById('money').textContent = money; // Para gösterimini güncelle
             
             // Güçlendirme durumu
             let status = '';
@@ -714,7 +726,7 @@
         function showUpgradeScreen() {
             gameRunning = false; // Oyunu durdur
             document.getElementById('upgradeScreen').style.display = 'block';
-            renderUpgrades();
+            renderUpgrades(); // Yükseltmeleri menüye çiz
         }
 
         // Yükseltme ekranını gizle
@@ -726,7 +738,7 @@
         // Yükseltmeleri çiz
         function renderUpgrades() {
             const upgradeListDiv = document.getElementById('upgradeList');
-            upgradeListDiv.innerHTML = ''; // Temizle
+            upgradeListDiv.innerHTML = ''; // İçeriği temizle
 
             for (const key in upgrades) {
                 const upgrade = upgrades[key];
@@ -740,8 +752,8 @@
                 upgradeItem.innerHTML = `
                     <h3>${upgrade.name} (Seviye: ${upgrade.currentLevel} / ${upgrade.levels})</h3>
                     <p>${upgrade.description}</p>
-                    <p>Mevcut: ${getUpgradeCurrentValue(key)}</p>
-                    <p>Sonraki Seviye: ${isMaxLevel ? 'Maksimum' : getUpgradeNextValue(key)}</p>
+                    <p>Mevcut: <strong>${getUpgradeCurrentValue(key)}</strong></p>
+                    <p>Sonraki Seviye: <strong>${isMaxLevel ? 'Maksimum' : getUpgradeNextValue(key)}</strong></p>
                     <button class="upgrade-button ${isMaxLevel || !canAfford ? 'disabled' : ''}" 
                             onclick="buyUpgrade('${key}')" 
                             ${isMaxLevel || !canAfford ? 'disabled' : ''}>
@@ -752,13 +764,13 @@
             }
         }
 
-        // Yükseltme değerlerini göster
+        // Yükseltme değerlerini göster (Daha okunur format)
         function getUpgradeCurrentValue(key) {
             switch(key) {
                 case 'fireRate': return `${Math.round(player.fireRate)}ms (Daha Düşük Daha İyi)`;
-                case 'playerSpeed': return `${player.speed} birim/kare`;
-                case 'bulletDamage': return `${player.bulletDamage} hasar`;
-                case 'maxLives': return `${upgrades.maxLives.currentLevel === 1 ? 'Aktif' : 'Pasif'}`;
+                case 'playerSpeed': return `${player.speed.toFixed(1)} birim/kare`;
+                case 'bulletDamage': return `${player.bulletDamage.toFixed(1)} hasar`;
+                case 'maxLives': return `${upgrades.maxLives.currentLevel === 1 ? 'Aktif (4 Can)' : 'Pasif (3 Can)'}`;
                 default: return '';
             }
         }
@@ -769,13 +781,12 @@
 
             switch(key) {
                 case 'fireRate': return `${Math.round(player.baseFireRate * (1 - (upgrade.currentLevel + 1) * 0.15))}ms`;
-                case 'playerSpeed': return `${player.baseSpeed * (1 + (upgrade.currentLevel + 1) * 0.25)} birim/kare`;
-                case 'bulletDamage': return `${1 + (upgrade.currentLevel + 1) * 0.5} hasar`;
+                case 'playerSpeed': return `${(player.baseSpeed * (1 + (upgrade.currentLevel + 1) * 0.25)).toFixed(1)} birim/kare`;
+                case 'bulletDamage': return `${(1 + (upgrade.currentLevel + 1) * 0.5).toFixed(1)} hasar`;
                 case 'maxLives': return `Can limitini 4 yapar`;
                 default: return '';
             }
         }
-
 
         // Yükseltme satın al
         function buyUpgrade(upgradeKey) {
@@ -787,10 +798,10 @@
                 upgrade.currentLevel++;
                 upgrade.apply(); // Yükseltmeyi uygula
                 playSound(900, 0.2, 'square'); // Yükseltme sesi
-                updateUI();
+                updateUI(); // Para ve diğer UI elementlerini güncelle
                 renderUpgrades(); // Yükseltme listesini yeniden çiz
             } else {
-                playSound(100, 0.1, 'sawtooth'); // Hata sesi
+                playSound(100, 0.1, 'sawtooth'); // Hata sesi (yeterli para yok veya max seviye)
             }
         }
 
@@ -805,11 +816,14 @@
         // Oyunu başlat
         function startGame() {
             document.getElementById('startScreen').style.display = 'none';
+            document.getElementById('gameOver').style.display = 'none'; // GameOver ekranını kapat
+            document.getElementById('upgradeScreen').style.display = 'none'; // Upgrade ekranını kapat
+
             gameRunning = true;
             score = 0;
-            lives = 3;
+            lives = 3; // Varsayılan can 3
             level = 1;
-            money = 0; // Para sıfırla
+            money = 0; // Oyun başladığında para sıfırlanır
             gameSpeed = 0.5;
             
             // Dizileri temizle
@@ -821,18 +835,21 @@
             // Güçlendirmeleri sıfırla
             powerupStates = { rapidFire: 0, multiShot: 0, shield: 0 };
             
-            // Yükseltmeleri sıfırla ve uygula
+            // Yükseltmeleri sıfırla ve varsayılan değerlerini uygula
             for (const key in upgrades) {
-                upgrades[key].currentLevel = 0;
-                upgrades[key].apply();
+                upgrades[key].currentLevel = 0; // Tüm yükseltmeleri 0. seviyeye getir
+                upgrades[key].apply(); // Yükseltmelerin başlangıç değerlerini uygula (player.speed, player.fireRate vb. güncellenir)
             }
+            // MaxLives için özel kontrol, çünkü lives sadece başlangıçta güncellenir
+            lives = 3; 
+
 
             // Oyuncuyu ortaya al
             player.x = canvas.width / 2 - 25;
             player.y = canvas.height - 80;
             
-            createStars();
-            updateUI();
+            createStars(); // Yıldızları bir kez oluştur
+            updateUI(); // UI'ı başlangıç değerleriyle güncelle
         }
 
         // Oyunu bitir
@@ -858,10 +875,15 @@
             // Yeniden boyutlandırmadan sonra oyuncu konumunu ayarla
             player.x = canvas.width / 2 - player.width / 2;
             player.y = canvas.height - 80;
+            // Yıldızları yeniden konumlandır
+            stars = [];
+            createStars();
         });
 
         // Oyun döngüsünü başlat
         gameLoop();
+        createStars(); // İlk yıldızları oyun başlamadan oluştur
+        document.getElementById('startScreen').style.display = 'block'; // Başlangıç ekranını göster
     </script>
 </body>
 </html>
